@@ -11,44 +11,87 @@ namespace SOReproduce
     class Program : IDesignTimeDbContextFactory<MyContext>
     {
         public MyContext CreateDbContext(string[] args)
-        {           
+        {
+            string ipAddress = "localhost";
+            short port = 5432;
             DbContextOptionsBuilder<MyContext> optionsBuilder = new DbContextOptionsBuilder<MyContext>()
-                .UseSqlServer(@"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog =SOReproducteDb; Integrated Security=True;Trusted_Connection=True;");
-
-            return new MyContext(optionsBuilder.Options);
+                .UseNpgsql($"Host={ipAddress};Port={port};Database=tests;Username=postgres;Password=postgres");
+            
+            return new MyContext();
         }
+        
         static async Task Main(string[] args)
         {
             var program = new Program();
             using (var context = program.CreateDbContext(null))
             {
-                Item item = new Item()
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
+                
+                ItemEntity item1Entity = new ItemEntity()
                 {
                     Name = "Item1"
                 };
-                using (var transaction = context.Database.BeginTransaction())
+                ItemEntity item2Entity = new ItemEntity()
                 {
-                    await context.Items.AddAsync(item); // The item is stored in store StoreItem
-                    await context.SaveChangesAsync();
-
-                    transaction.Commit();
-                }
-                Store store = new Store()
+                    Name = "Item2"
+                };
+                StoreEntity storeEntity = new StoreEntity()
                 {
                     Name = "Store1"
                 };
-                store.Items = new List<StoreItem>()
+                var storesForItem1 = new List<StoreItemEntity>()
                 {
-                    new StoreItem()
+                    new StoreItemEntity()
                     {
-                        ItemId = item.Id,
-                        Item = item,
-                        Store = store,
+                        ItemId = item1Entity.Id,
+                        Item = item1Entity,
+                        Store = storeEntity,
                     }
                 };
+                var storesForItem2 = new List<StoreItemEntity>()
+                {
+                    new StoreItemEntity()
+                    {
+                        ItemId = item2Entity.Id,
+                        Item = item2Entity,
+                        Store = storeEntity,
+                    }
+                };
+                var itemsForStore = new List<StoreItemEntity>()
+                {
+                    new StoreItemEntity()
+                    {
+                        Item = item1Entity,
+                        StoreId = storeEntity.Id,
+                        Store = storeEntity,
+                    },
+                    new StoreItemEntity()
+                    {
+                        Item = item2Entity,
+                        StoreId = storeEntity.Id,
+                        Store = storeEntity,
+                    }
+                };
+                item1Entity.Stores = storesForItem1;
+                item2Entity.Stores = storesForItem2;
+                storeEntity.Items = itemsForStore;
+
+                var conn = new ConnEntity()
+                {
+                    Name = "Hr",
+                };
+
                 using (var transaction = context.Database.BeginTransaction())
                 {
-                    await context.Stores.AddAsync(store);
+                    if (storeEntity.Id == 0)
+                    {
+                        await context.Stores.AddAsync(storeEntity);
+                    }
+                    else
+                    {
+                        context.Stores.Update(storeEntity);
+                    }
                     await context.SaveChangesAsync();
                     transaction.Commit();
                 }
