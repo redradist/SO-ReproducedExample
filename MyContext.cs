@@ -14,7 +14,7 @@ namespace SOReproduce
         public DbSet<StoreEntity> Stores { get; set; }
         public DbSet<ConnEntity> Conns { get; set; }
         public DbSet<ConnItemEntity> ConnItems { get; set; }
-        public DbSet<StoreItemEntity> StoreItem { get; set; }
+        public DbSet<StoreItemEntity> StoreItems { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

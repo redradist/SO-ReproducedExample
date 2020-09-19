@@ -40,60 +40,51 @@ namespace SOReproduce
                 {
                     Name = "Store1"
                 };
-                var storesForItem1 = new List<StoreItemEntity>()
+
+
+                await using (var transaction = context.Database.BeginTransaction())
                 {
-                    new StoreItemEntity()
+                    await context.Items.AddAsync(item1Entity);
+                    await context.Items.AddAsync(item2Entity);
+                    await context.Stores.AddAsync(storeEntity);
+
+                    await context.SaveChangesAsync();
+
+                    var storeItem1 = new StoreItemEntity()
                     {
                         ItemId = item1Entity.Id,
                         Item = item1Entity,
+                        StoreId = storeEntity.Id,
                         Store = storeEntity,
-                    }
-                };
-                var storesForItem2 = new List<StoreItemEntity>()
-                {
-                    new StoreItemEntity()
+                    };
+                    var storesForItem1 = new List<StoreItemEntity>()
+                    {
+                        storeItem1
+                    };
+                    var storeItem2 = new StoreItemEntity()
                     {
                         ItemId = item2Entity.Id,
                         Item = item2Entity,
-                        Store = storeEntity,
-                    }
-                };
-                var itemsForStore = new List<StoreItemEntity>()
-                {
-                    new StoreItemEntity()
-                    {
-                        Item = item1Entity,
                         StoreId = storeEntity.Id,
                         Store = storeEntity,
-                    },
-                    new StoreItemEntity()
+                    };
+                    var storesForItem2 = new List<StoreItemEntity>()
                     {
-                        Item = item2Entity,
-                        StoreId = storeEntity.Id,
-                        Store = storeEntity,
-                    }
-                };
-                item1Entity.Stores = storesForItem1;
-                item2Entity.Stores = storesForItem2;
-                storeEntity.Items = itemsForStore;
-
-                var conn = new ConnEntity()
-                {
-                    Name = "Hr",
-                };
-
-                using (var transaction = context.Database.BeginTransaction())
-                {
-                    if (storeEntity.Id == 0)
+                        storeItem2
+                    };
+                    var itemsForStore = new List<StoreItemEntity>()
                     {
-                        await context.Stores.AddAsync(storeEntity);
-                    }
-                    else
-                    {
-                        context.Stores.Update(storeEntity);
-                    }
+                        storeItem1,
+                        storeItem2
+                    };
+                    item1Entity.Stores = storesForItem1;
                     await context.SaveChangesAsync();
-                    transaction.Commit();
+                    item2Entity.Stores = storesForItem2;
+                    await context.SaveChangesAsync();
+                    storeEntity.Items = itemsForStore;
+                    await context.SaveChangesAsync();
+                    
+                    await context.SaveChangesAsync();
                 }
             }
         }
